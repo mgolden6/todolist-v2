@@ -4,19 +4,23 @@
 <head>
     <meta charset="UTF-8">
     <title>To Do List</title>
+    <link rel="stylesheet" href="/styles.css">
 </head>
 
 <body>
 
     <h1><%= kindOfDay %> ToDo List</h1>
     <ul>
-        <li>buy food</li>
-        <li>cook food</li>
-        <li>eat food</li>
+
+        <% for(let i = 0; i < itemsList.length; i++){ %>
+            <li><%= itemsList[i] %></li>
+        <% }; %>
+
     </ul>
 
     <form action="/" method="post">
-    <input type="button" value="">
+        <input type="text" name="newItem" autofocus></input>
+        <button type="submit" name="button">Add</button>
     </form>
 
 </body>

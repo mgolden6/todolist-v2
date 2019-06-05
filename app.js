@@ -6,8 +6,12 @@ const app = express();
 
 app.set("view engine", "ejs");
 
+app.use(express.static("public"));
+
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
+
+let items = [];
 
 app.get("/", function (req, res) {
 
@@ -20,8 +24,17 @@ app.get("/", function (req, res) {
 
     let weekday = today.toLocaleDateString("en-US", options);
     res.render("list", {
-        kindOfDay: weekday
+        kindOfDay: weekday,
+        itemsList: items
     });
+});
+
+app.post("/", function (req, res) {
+    let newItem = req.body.newItem;
+    items.push(newItem);
+    console.log(items);
+
+    res.redirect("/");
 });
 
 app.listen(port, function () {
