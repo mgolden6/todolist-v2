@@ -8,20 +8,25 @@
 </head>
 
 <body>
+    <div class="box" id="heading">
+        <h1><%= kindOfDay %></h1>
+    </div>
 
-    <h1><%= kindOfDay %> ToDo List</h1>
-    <ul>
+    <div class="box">
 
         <% for(let i = 0; i < itemsList.length; i++){ %>
-            <li><%= itemsList[i] %></li>
+        <div class="item">
+            <input type="checkbox">
+            <p><%= itemsList[i] %></p>
+        </div>
         <% }; %>
 
-    </ul>
+        <form action="/" method="post">
+            <input type="text" name="newItem" placeholder="New Item" autocomplete="off" autofocus>
+            <button type="submit" name="button">+</button>
+        </form>
 
-    <form action="/" method="post">
-        <input type="text" name="newItem" autofocus></input>
-        <button type="submit" name="button">Add</button>
-    </form>
+    </div>
 
 </body>
 
