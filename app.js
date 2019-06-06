@@ -11,7 +11,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.static("public"));
 
-let items = [];
+let personalItems = [];
+let workItems = [];
 
 app.get("/", function (req, res) {
 
@@ -24,17 +25,35 @@ app.get("/", function (req, res) {
 
     let weekday = today.toLocaleDateString("en-US", options);
     res.render("list", {
-        kindOfDay: weekday,
-        itemsList: items
+        listTitle: weekday,
+        itemsList: personalItems
     });
 });
 
 app.post("/", function (req, res) {
-    let newItem = req.body.newItem;
-    items.push(newItem);
-    console.log(items);
 
-    res.redirect("/");
+    let newItem = req.body.newItem;
+
+    if (req.body.newItemButton === "Work") {
+        workItems.push(newItem);
+        res.redirect("/work");
+    } else {
+        personalItems.push(newItem);
+        res.redirect("/");
+    }
+});
+
+app.get("/work", function (req, res) {
+    res.render("list", {
+        listTitle: "Work list",
+        itemsList: workItems
+    });
+});
+
+app.post("/work", function (req, res) {
+    let newItem = req.body.newItem;
+    workItems.push(newItem);
+    res.redirect("/work");
 });
 
 app.listen(port, function () {
