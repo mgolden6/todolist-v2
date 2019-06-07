@@ -1,29 +1,31 @@
 // jshint esversion: 6
 
+// require and configure express
 const express = require("express");
 const port = 3000;
 const app = express();
 
+// enable ejs
 app.set("view engine", "ejs");
 
+// require and configure body-parser
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// require custom date module for node
+const date = require (__dirname + "/date.js");
+
+// enable use of local files (css, etc.)
 app.use(express.static("public"));
 
-let personalItems = [];
-let workItems = [];
+// create arrays for each list
+const personalItems = [];
+const workItems = [];
 
 app.get("/", function (req, res) {
 
-    let today = new Date();
-    let options = {
-        weekday: "long",
-        month: "long",
-        day: "numeric"
-    };
+    const weekday = date.getDate();
 
-    let weekday = today.toLocaleDateString("en-US", options);
     res.render("list", {
         listTitle: weekday,
         itemsList: personalItems
@@ -32,7 +34,7 @@ app.get("/", function (req, res) {
 
 app.post("/", function (req, res) {
 
-    let newItem = req.body.newItem;
+    const newItem = req.body.newItem;
 
     if (req.body.newItemButton === "Work") {
         workItems.push(newItem);
@@ -51,7 +53,7 @@ app.get("/work", function (req, res) {
 });
 
 app.post("/work", function (req, res) {
-    let newItem = req.body.newItem;
+    const newItem = req.body.newItem;
     workItems.push(newItem);
     res.redirect("/work");
 });
