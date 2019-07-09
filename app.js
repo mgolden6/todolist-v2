@@ -5,6 +5,12 @@ const express = require("express");
 const port = 3000;
 const app = express();
 
+// require mongoose
+const mongoose = require("mongoose");
+
+// create and connect mongoose to a database
+mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true});
+
 // enable ejs
 app.set("view engine", "ejs");
 
