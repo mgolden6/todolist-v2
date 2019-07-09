@@ -9,7 +9,25 @@ const app = express();
 const mongoose = require("mongoose");
 
 // create and connect mongoose to a database
-mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true});
+mongoose.connect("mongodb://localhost:27017/todolistDB", { useNewUrlParser: true });
+
+//get notified of the status of the mongoose connection to the database
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", function () {
+    console.log("Mongoose connected!");
+});
+
+// build schema(s)
+const itemsSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: [true, "must include a name"]
+    }
+});
+
+//compile the schema(s) into a model(s) (model = class/collection to construct documents)
+const Item = mongoose.model("Item", itemsSchema);
 
 // enable ejs
 app.set("view engine", "ejs");
@@ -19,7 +37,7 @@ const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // require custom date module for node
-const date = require (__dirname + "/date.js");
+const date = require(__dirname + "/date.js");
 
 // enable use of local files (css, etc.)
 app.use(express.static("public"));
