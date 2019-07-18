@@ -52,7 +52,7 @@ app.get("/", function (req, res) {
             const weekday = date.getDate();
 
             console.log("items: " + items + " weekday: " + weekday);
-            
+
             res.render("list", {
                 listTitle: weekday,
                 itemsList: items
@@ -98,6 +98,18 @@ app.post("/work", function (req, res) {
     });
     newItem.save();
     res.redirect("/work");
+});
+
+app.post("/delete", function (req, res) {
+    const checkedItemID = req.body.checkbox;
+    Item.findByIdAndRemove(checkedItemID, function (err) {
+        if (err) {
+            console.log(err + "@ /delete route");
+        } else {
+            console.log("successfully deleted document");
+            res.redirect("/");
+        }
+    });
 });
 
 app.get("/about", function (req, res) {
