@@ -5,6 +5,21 @@ const express = require("express");
 const port = 3000;
 const app = express();
 
+// enable use of local files (css, etc.)
+app.use(express.static("public"));
+
+// enable ejs
+app.set("view engine", "ejs");
+
+// require and configure body-parser
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// require custom date module for node, then get weekday
+const date = require(__dirname + "/date.js");
+const weekday = date.getDay();
+
+// setup the database
 // require mongoose
 const mongoose = require("mongoose");
 
@@ -18,7 +33,7 @@ db.once("open", function () {
     console.log("Mongoose connected!");
 });
 
-// build schema(s)
+// build database schema(s)
 const itemsSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -26,21 +41,17 @@ const itemsSchema = new mongoose.Schema({
     }
 });
 
+const listSchema = {
+    name: {
+        type: String,
+        required: [true, "must have a name for each list"]
+    },
+    items: [itemsSchema]
+};
+
 // compile the schema(s) into a model(s) (model = class/collection to construct documents)
 const Item = mongoose.model("Item", itemsSchema);
-
-// enable ejs
-app.set("view engine", "ejs");
-
-// require and configure body-parser
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// require custom date module for node
-const date = require(__dirname + "/date.js");
-
-// enable use of local files (css, etc.)
-app.use(express.static("public"));
+const List = mongoose.model("List", listSchema);
 
 app.get("/", function (req, res) {
 
@@ -48,8 +59,6 @@ app.get("/", function (req, res) {
         if (err) {
             console.log(err + "@ get / route");
         } else {
-
-            const weekday = date.getDate();
 
             console.log("items: " + items + " weekday: " + weekday);
 
@@ -76,16 +85,15 @@ app.post("/", function (req, res) {
     }
 });
 
-app.get("/work", function (req, res) {
+app.get("/:listName", function (req, res) {
+    const listName = req.params.listName;
     Item.find({}, function (err, items) {
         if (err) {
-            console.log(err + "@ get /work route");
+            console.log(err + " @/" + listName + " route");
         } else {
-
-            console.log("/work items: " + items);
-
+            console.log("/" + listName + " items " + items);
             res.render("list", {
-                listTitle: "Work list",
+                listTitle: listName + " list",
                 itemsList: items
             });
         }
