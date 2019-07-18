@@ -54,58 +54,34 @@ const Item = mongoose.model("Item", itemsSchema);
 const List = mongoose.model("List", listSchema);
 
 app.get("/", function (req, res) {
-
     Item.find({}, function (err, items) {
         if (err) {
             console.log(err + "@ get / route");
         } else {
-
-            console.log("items: " + items + " weekday: " + weekday);
-
+            console.log("root route items: " + items + " weekday: " + weekday);
             res.render("list", {
                 listTitle: weekday,
-                itemsList: items
+                itemsList: items,
+                listName: ""
             });
         }
     });
-
-});
-
-app.post("/", function (req, res) {
-    const newItem = new Item({
-        name: req.body.newItem
-    });
-
-    if (req.body.newItemButton === "Work") {
-        newItem.save();
-        res.redirect("/work");
-    } else {
-        newItem.save();
-        res.redirect("/");
-    }
 });
 
 app.get("/:listName", function (req, res) {
     const listName = req.params.listName;
     Item.find({}, function (err, items) {
         if (err) {
-            console.log(err + " @/" + listName + " route");
+            console.log(err + " @ get /" + listName + " route");
         } else {
-            console.log("/" + listName + " items " + items);
+            console.log("/" + listName + " route items: " + items);
             res.render("list", {
                 listTitle: listName + " list",
-                itemsList: items
+                itemsList: items,
+                listName: listName
             });
         }
     });
-});
-
-app.post("/work", function (req, res) {
-    const newItem = new Item({
-        name: req.body.newItem
-    });
-    newItem.save();
-    res.redirect("/work");
 });
 
 app.post("/delete", function (req, res) {
@@ -119,6 +95,60 @@ app.post("/delete", function (req, res) {
         }
     });
 });
+
+app.post("/:listName", function (req, res) {
+    const newItem = new Item({
+        name: req.body.newItem
+    });
+    newItem.save();
+
+    const listName = req.params.listName;
+
+    console.log("we hit /" + listName);
+
+    List.findOne({ name: listName }, function (err, list) {
+        if (err) {
+            console.log(err);
+        } else {
+            if (list) {
+                console.log(listName + " list already exists");
+                res.redirect("/" + listName);
+            } else {
+                newList = new List({
+                    name: listName,
+                    items: []
+                });
+                newList.save();
+                console.log(listName + " is a new list");
+                res.redirect("/" + listName);
+            }
+        }
+    });
+});
+
+app.post("/", function (req, res) {
+    console.log("hitting root route");
+
+    const newItem = new Item({
+        name: req.body.newItem
+    });
+
+    if (req.body.newItemButton === "Work") {
+        newItem.save();
+        res.redirect("/work");
+    } else {
+        newItem.save();
+        res.redirect("/");
+    }
+});
+
+// app.post("/work", function (req, res) {
+//     const newItem = new Item({
+//         name: req.body.newItem
+//     });
+//     newItem.save();
+//     res.redirect("/work");
+// });
 
 app.get("/about", function (req, res) {
     res.render("about");
