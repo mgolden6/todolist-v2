@@ -11,7 +11,7 @@ const mongoose = require("mongoose");
 // create and connect mongoose to a database
 mongoose.connect("mongodb://localhost:27017/todolistDB", { useNewUrlParser: true });
 
-//get notified of the status of the mongoose connection to the database
+//get the status of the mongoose connection to the database
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:"));
 db.once("open", function () {
@@ -26,7 +26,7 @@ const itemsSchema = new mongoose.Schema({
     }
 });
 
-//compile the schema(s) into a model(s) (model = class/collection to construct documents)
+// compile the schema(s) into a model(s) (model = class/collection to construct documents)
 const Item = mongoose.model("Item", itemsSchema);
 
 // enable ejs
@@ -42,43 +42,61 @@ const date = require(__dirname + "/date.js");
 // enable use of local files (css, etc.)
 app.use(express.static("public"));
 
-// create arrays for each list
-const personalItems = [];
-const workItems = [];
-
 app.get("/", function (req, res) {
 
-    const weekday = date.getDate();
+    Item.find({}, function (err, items) {
+        if (err) {
+            console.log(err + "@ get / route");
+        } else {
 
-    res.render("list", {
-        listTitle: weekday,
-        itemsList: personalItems
+            const weekday = date.getDate();
+
+            console.log("items: " + items + " weekday: " + weekday);
+            
+            res.render("list", {
+                listTitle: weekday,
+                itemsList: items
+            });
+        }
     });
+
 });
 
 app.post("/", function (req, res) {
-
-    const newItem = req.body.newItem;
+    const newItem = new Item({
+        name: req.body.newItem
+    });
 
     if (req.body.newItemButton === "Work") {
-        workItems.push(newItem);
+        newItem.save();
         res.redirect("/work");
     } else {
-        personalItems.push(newItem);
+        newItem.save();
         res.redirect("/");
     }
 });
 
 app.get("/work", function (req, res) {
-    res.render("list", {
-        listTitle: "Work list",
-        itemsList: workItems
+    Item.find({}, function (err, items) {
+        if (err) {
+            console.log(err + "@ get /work route");
+        } else {
+
+            console.log("/work items: " + items);
+
+            res.render("list", {
+                listTitle: "Work list",
+                itemsList: items
+            });
+        }
     });
 });
 
 app.post("/work", function (req, res) {
-    const newItem = req.body.newItem;
-    workItems.push(newItem);
+    const newItem = new Item({
+        name: req.body.newItem
+    });
+    newItem.save();
     res.redirect("/work");
 });
 
