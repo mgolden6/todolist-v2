@@ -44,7 +44,7 @@ const itemsSchema = new mongoose.Schema({
 const listSchema = {
     name: {
         type: String,
-        required: [true, "must have a name for each list"]
+        required: [true, "need a list name"]
     },
     items: [itemsSchema]
 };
@@ -53,6 +53,7 @@ const listSchema = {
 const Item = mongoose.model("Item", itemsSchema);
 const List = mongoose.model("List", listSchema);
 
+// get route(s)
 app.get("/", function (req, res) {
     Item.find({}, function (err, items) {
         if (err) {
@@ -60,7 +61,7 @@ app.get("/", function (req, res) {
         } else {
             console.log("root route items: " + items + " weekday: " + weekday);
             res.render("list", {
-                listTitle: weekday,
+                listTitle: weekday + "list",
                 itemsList: items,
                 listName: ""
             });
@@ -70,13 +71,13 @@ app.get("/", function (req, res) {
 
 app.get("/:listName", function (req, res) {
     const listName = req.params.listName;
-    Item.find({}, function (err, items) {
+    List.find({name: listName}, function (err, items) {
         if (err) {
             console.log(err + " @ get /" + listName + " route");
         } else {
             console.log("/" + listName + " route items: " + items);
             res.render("list", {
-                listTitle: listName + " list",
+                listTitle: weekday + " " + listName + " list",
                 itemsList: items,
                 listName: listName
             });
@@ -84,51 +85,54 @@ app.get("/:listName", function (req, res) {
     });
 });
 
-app.post("/delete", function (req, res) {
-    const checkedItemID = req.body.checkbox;
-    Item.findByIdAndRemove(checkedItemID, function (err) {
-        if (err) {
-            console.log(err + "@ /delete route");
-        } else {
-            console.log("successfully deleted document");
-            res.redirect("/");
-        }
-    });
-});
-
 app.post("/:listName", function (req, res) {
-    const newItem = new Item({
-        name: req.body.newItem
-    });
-    newItem.save();
-
     const listName = req.params.listName;
 
-    console.log("we hit /" + listName);
-
-    List.findOne({ name: listName }, function (err, list) {
-        if (err) {
-            console.log(err);
-        } else {
-            if (list) {
-                console.log(listName + " list already exists");
-                res.redirect("/" + listName);
+    // handle the delete route
+    if (listName === "delete") {
+        const checkedItemID = req.body.checkbox;
+        Item.findByIdAndRemove(checkedItemID, function (err) {
+            if (err) {
+                console.log("ERROR: " + err + "@ /delete route");
             } else {
-                newList = new List({
-                    name: listName,
-                    items: []
-                });
-                newList.save();
-                console.log(listName + " is a new list");
-                res.redirect("/" + listName);
+                console.log("successfully deleted document");
+
+                // fix redirect to list that /delete was called from
+                res.redirect("/");
             }
-        }
-    });
+        });
+    } else {
+
+        // handle non root routes
+        const newItem = new Item({
+            name: req.body.newItem
+        });
+        newItem.save();
+
+        List.findOne({ name: listName }, function (err, list) {
+            if (err) {
+                console.log("ERROR: " + err + " when searching for " + listName + " list");
+            } else {
+                if (list) {
+                    console.log(listName + " list already exists");
+                    // save new item to existing list
+                    res.redirect("/" + listName);
+                } else {
+                    // create new list with new item
+                    newList = new List({
+                        name: listName,
+                        items: [newItem]
+                    });
+                    newList.save();
+                    console.log("created " + listName + " list");
+                    res.redirect("/" + listName);
+                }
+            }
+        });
+    }
 });
 
 app.post("/", function (req, res) {
-    console.log("hitting root route");
-
     const newItem = new Item({
         name: req.body.newItem
     });
@@ -140,18 +144,6 @@ app.post("/", function (req, res) {
         newItem.save();
         res.redirect("/");
     }
-});
-
-// app.post("/work", function (req, res) {
-//     const newItem = new Item({
-//         name: req.body.newItem
-//     });
-//     newItem.save();
-//     res.redirect("/work");
-// });
-
-app.get("/about", function (req, res) {
-    res.render("about");
 });
 
 app.listen(port, function () {

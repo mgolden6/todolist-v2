@@ -10,11 +10,10 @@
         <form action="/delete" method="POST">
              <div class="item">
                 <input type="checkbox" name="checkbox" value="<%= item._id %>" onchange="this.form.submit()"> 
-                <p><%= item.name %></p> 
+                <p><%= item.items %></p> 
             </div> 
         </form>
      <% }) %> 
-
 
     <form class="item" action="/<%= listName %>" method="post">
         <input type="text" name="newItem" placeholder="New Item" autocomplete="off" autofocus>
