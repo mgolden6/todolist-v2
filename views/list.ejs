@@ -9,9 +9,10 @@
     <% itemsList.forEach(function(item) { %>
         <form action="/delete" method="POST">
              <div class="item">
-                <input type="checkbox" name="checkbox" value="<%= item._id %>" onchange="this.form.submit()"> 
-                <p><%= item.items %></p> 
+                <input type="checkbox" name="checkbox" value="<%= item %>" onchange="this.form.submit()"> 
+                <p><%= item.name %></p> 
             </div> 
+            <input type="hidden" name="deleteFromListName" value="<%= listTitle %>"></input>
         </form>
      <% }) %> 
 

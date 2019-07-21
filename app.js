@@ -5,6 +5,9 @@ const express = require("express");
 const port = 3000;
 const app = express();
 
+// require lodash
+const _ = require("lodash");
+
 // enable use of local files (css, etc.)
 app.use(express.static("public"));
 
@@ -61,7 +64,7 @@ app.get("/", function (req, res) {
         } else {
             console.log("root route items: " + items + " weekday: " + weekday);
             res.render("list", {
-                listTitle: weekday + "list",
+                listTitle: weekday + " list",
                 itemsList: items,
                 listName: ""
             });
@@ -70,13 +73,14 @@ app.get("/", function (req, res) {
 });
 
 app.get("/:listName", function (req, res) {
-    const listName = req.params.listName;
-    List.find({name: listName}, function (err, items) {
+    const listName = _.capitalize(req.params.listName);
+    List.find({ name: listName }, function (err, items) {
         if (err) {
             console.log(err + " @ get /" + listName + " route");
         } else {
             console.log("/" + listName + " route items: " + items);
             res.render("list", {
+                //could I refactor to just use listTitle OR listName?
                 listTitle: weekday + " " + listName + " list",
                 itemsList: items,
                 listName: listName
@@ -85,12 +89,14 @@ app.get("/:listName", function (req, res) {
     });
 });
 
+// post route(s)
 app.post("/:listName", function (req, res) {
-    const listName = req.params.listName;
+    const listName = _.capitalize(req.params.listName);
 
     // handle the delete route
     if (listName === "delete") {
         const checkedItemID = req.body.checkbox;
+        const deleteFromListName = req.body.deleteFromListName;
         Item.findByIdAndRemove(checkedItemID, function (err) {
             if (err) {
                 console.log("ERROR: " + err + "@ /delete route");
@@ -98,7 +104,9 @@ app.post("/:listName", function (req, res) {
                 console.log("successfully deleted document");
 
                 // fix redirect to list that /delete was called from
-                res.redirect("/");
+                console.log("redirecting to: " + deleteFromListName);
+                
+                res.redirect("/" + deleteFromListName);
             }
         });
     } else {
