@@ -38,17 +38,11 @@ db.once("open", function () {
 
 // build database schema(s)
 const itemsSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, "must include a name"]
-    }
+    name: String
 });
 
 const listSchema = {
-    name: {
-        type: String,
-        required: [true, "need a list name"]
-    },
+    name: String,
     items: [itemsSchema]
 };
 
@@ -58,14 +52,16 @@ const List = mongoose.model("List", listSchema);
 
 // get route(s)
 app.get("/", function (req, res) {
-    Item.find({}, function (err, items) {
+    // find all the items
+    Item.find({}, function (err, foundItems) {
         if (err) {
             console.log(err + "@ get / route");
         } else {
-            console.log("root route items: " + items + " weekday: " + weekday);
+            // display all the items
+            console.log("root route items: " + foundItems);
             res.render("list", {
                 listTitle: weekday + " list",
-                itemsList: items,
+                listItems: foundItems,
                 listName: ""
             });
         }
@@ -74,17 +70,29 @@ app.get("/", function (req, res) {
 
 app.get("/:listName", function (req, res) {
     const listName = _.capitalize(req.params.listName);
-    List.find({ name: listName }, function (err, items) {
+    // look for the list
+    List.findOne({ name: listName }, function (err, foundList) {
         if (err) {
-            console.log(err + " @ get /" + listName + " route");
+            console.log("ERROR: " + err + " @ get /" + listName + " route");
         } else {
-            console.log("/" + listName + " route items: " + items);
-            res.render("list", {
-                //could I refactor to just use listTitle OR listName?
-                listTitle: weekday + " " + listName + " list",
-                itemsList: items,
-                listName: listName
-            });
+            if (foundList) {
+                // render the list if it exists
+                res.render("list", {
+                    //could I refactor to just use listTitle OR listName?
+                    listTitle: listName,
+                    listItems: foundList.items,
+                    listName: listName
+                });
+            } else {
+                // create a blank list if it doesn't exist
+                newList = new List({
+                    name: listName,
+                    items: []
+                });
+                newList.save();
+                console.log("created " + listName + " list");
+                res.redirect("/" + listName);
+            }
         }
     });
 });
@@ -93,10 +101,17 @@ app.get("/:listName", function (req, res) {
 app.post("/:listName", function (req, res) {
     const listName = _.capitalize(req.params.listName);
 
+    // save the new item to the items list (maybe don't do this)
+    const newItem = new Item({
+        name: req.body.newItem
+    });
+    newItem.save();
+
     // handle the delete route
-    if (listName === "delete") {
+    if (listName === "Delete") {
         const checkedItemID = req.body.checkbox;
         const deleteFromListName = req.body.deleteFromListName;
+
         Item.findByIdAndRemove(checkedItemID, function (err) {
             if (err) {
                 console.log("ERROR: " + err + "@ /delete route");
@@ -104,29 +119,29 @@ app.post("/:listName", function (req, res) {
                 console.log("successfully deleted document");
 
                 // fix redirect to list that /delete was called from
-                console.log("redirecting to: " + deleteFromListName);
-                
-                res.redirect("/" + deleteFromListName);
+                if (deleteFromListName === weekday + " list") {
+                    res.redirect("/");
+                } else {
+                    res.redirect("/" + deleteFromListName);
+                }
             }
         });
     } else {
-
-        // handle non root routes
-        const newItem = new Item({
-            name: req.body.newItem
-        });
-        newItem.save();
-
-        List.findOne({ name: listName }, function (err, list) {
+        // handle post route(s) other than delete & root
+        // see if list already exists
+        List.findOne({ name: listName }, function (err, foundList) {
             if (err) {
                 console.log("ERROR: " + err + " when searching for " + listName + " list");
             } else {
-                if (list) {
+                if (foundList) {
+                    // if lists exists, save new item to it
                     console.log(listName + " list already exists");
-                    // save new item to existing list
+                    foundList.items.push(newItem);
+                    foundList.save();
+                    console.log("saved " + newItem + " to " + foundList.name);
                     res.redirect("/" + listName);
                 } else {
-                    // create new list with new item
+                    // if list doesn't exist, create list & save new item to it
                     newList = new List({
                         name: listName,
                         items: [newItem]
@@ -144,14 +159,8 @@ app.post("/", function (req, res) {
     const newItem = new Item({
         name: req.body.newItem
     });
-
-    if (req.body.newItemButton === "Work") {
-        newItem.save();
-        res.redirect("/work");
-    } else {
-        newItem.save();
-        res.redirect("/");
-    }
+    newItem.save();
+    res.redirect("/");
 });
 
 app.listen(port, function () {
