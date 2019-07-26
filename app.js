@@ -58,7 +58,6 @@ app.get("/", function (req, res) {
             console.log(err + "@ get / route");
         } else {
             // display all the items
-            console.log("root route items: " + foundItems);
             res.render("list", {
                 listTitle: weekday + " list",
                 listItems: foundItems,
@@ -78,7 +77,6 @@ app.get("/:listName", function (req, res) {
             if (foundList) {
                 // render the list if it exists
                 res.render("list", {
-                    //could I refactor to just use listTitle OR listName?
                     listTitle: listName,
                     listItems: foundList.items,
                     listName: listName
@@ -100,33 +98,36 @@ app.get("/:listName", function (req, res) {
 // post route(s)
 app.post("/:listName", function (req, res) {
     const listName = _.capitalize(req.params.listName);
-
-    // save the new item to the items list (maybe don't do this)
-    const newItem = new Item({
-        name: req.body.newItem
-    });
-    newItem.save();
+    const newItem = req.body.newItem;
 
     // handle the delete route
     if (listName === "Delete") {
         const checkedItemID = req.body.checkbox;
         const deleteFromListName = req.body.deleteFromListName;
 
-        Item.findByIdAndRemove(checkedItemID, function (err) {
-            if (err) {
-                console.log("ERROR: " + err + "@ /delete route");
-            } else {
-                console.log("successfully deleted document");
-
-                // fix redirect to list that /delete was called from
-                if (deleteFromListName === weekday + " list") {
+        // Item.findByIDAndRemove if root route
+        if (deleteFromListName.includes(weekday)) {
+            Item.findByIdAndRemove(checkedItemID, function (err) {
+                if (!err) {
+                    console.log("Successfully deleted checked item from root.");
                     res.redirect("/");
-                } else {
-                    res.redirect("/" + deleteFromListName);
                 }
-            }
-        });
+            });
+        } else {
+            // else delete from custom list
+            List.findOneAndUpdate(
+                { name: deleteFromListName },
+                { $pull: { items: { _id: checkedItemID } } },
+                function (err, foundList) {
+                    if (!err) {
+                        console.log("Successfully deleted document from " + foundList);
+                        res.redirect("/" + deleteFromListName);
+                    }
+                }
+            );
+        }
     } else {
+
         // handle post route(s) other than delete & root
         // see if list already exists
         List.findOne({ name: listName }, function (err, foundList) {
@@ -136,6 +137,13 @@ app.post("/:listName", function (req, res) {
                 if (foundList) {
                     // if lists exists, save new item to it
                     console.log(listName + " list already exists");
+                    console.log("foundList: " + foundList);
+
+                    const newItem = new Item({
+                        name: req.body.newItem
+                    });
+                    newItem.save();
+
                     foundList.items.push(newItem);
                     foundList.save();
                     console.log("saved " + newItem + " to " + foundList.name);
