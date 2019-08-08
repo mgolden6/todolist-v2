@@ -41,10 +41,10 @@ const itemsSchema = new mongoose.Schema({
     name: String
 });
 
-const listSchema = {
+const listSchema = new mongoose.Schema({
     name: String,
     items: [itemsSchema]
-};
+});
 
 // compile the schema(s) into a model(s) (model = class/collection to construct documents)
 const Item = mongoose.model("Item", itemsSchema);
@@ -98,18 +98,20 @@ app.get("/:listName", function (req, res) {
 // post route(s)
 app.post("/:listName", function (req, res) {
     const listName = _.capitalize(req.params.listName);
-    const newItem = req.body.newItem;
+    const newItem = new Item({
+        name: req.body.newItem
+    });
 
     // handle the delete route
     if (listName === "Delete") {
         const checkedItemID = req.body.checkbox;
         const deleteFromListName = req.body.deleteFromListName;
 
-        // Item.findByIDAndRemove if root route
+        // delete if/from root route
         if (deleteFromListName.includes(weekday)) {
             Item.findByIdAndRemove(checkedItemID, function (err) {
                 if (!err) {
-                    console.log("Successfully deleted checked item from root.");
+                    console.log("deleted checked item from root.");
                     res.redirect("/");
                 }
             });
@@ -120,7 +122,7 @@ app.post("/:listName", function (req, res) {
                 { $pull: { items: { _id: checkedItemID } } },
                 function (err, foundList) {
                     if (!err) {
-                        console.log("Successfully deleted document from " + foundList);
+                        console.log("deleted document from " + foundList);
                         res.redirect("/" + deleteFromListName);
                     }
                 }
@@ -130,36 +132,18 @@ app.post("/:listName", function (req, res) {
 
         // handle post route(s) other than delete & root
         // see if list already exists
+
         List.findOne({ name: listName }, function (err, foundList) {
             if (err) {
-                console.log("ERROR: " + err + " when searching for " + listName + " list");
+                console.log(err);
             } else {
-                if (foundList) {
-                    // if lists exists, save new item to it
-                    console.log(listName + " list already exists");
-                    console.log("foundList: " + foundList);
-
-                    const newItem = new Item({
-                        name: req.body.newItem
-                    });
-                    newItem.save();
-
-                    foundList.items.push(newItem);
-                    foundList.save();
-                    console.log("saved " + newItem + " to " + foundList.name);
-                    res.redirect("/" + listName);
-                } else {
-                    // if list doesn't exist, create list & save new item to it
-                    newList = new List({
-                        name: listName,
-                        items: [newItem]
-                    });
-                    newList.save();
-                    console.log("created " + listName + " list");
-                    res.redirect("/" + listName);
-                }
+                foundList.items.push(newItem);
+                foundList.save();
+                console.log("added " + newItem + " to " + foundList);
+                res.redirect("/" + listName);
             }
-        });
+        }
+        );
     }
 });
 
