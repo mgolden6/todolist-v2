@@ -11,7 +11,7 @@ const _ = require("lodash");
 // enable use of local files (css, etc.)
 app.use(express.static("public"));
 
-// enable ejs
+// enable ejs !!! where are we requiring ejs ???
 app.set("view engine", "ejs");
 
 // require and configure body-parser
